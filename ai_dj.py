@@ -40,7 +40,7 @@ while True:
 		print(result)
 		cv2.putText(frame, result, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (200, 0, 0), 3, cv2.LINE_AA)
 
-	if (time.time() - start_time >= 10):
+	if (time.time() - start_time >= 10 and emotion_results):
                 dominant_emotion = max(emotion_results, key=emotion_results.count)
                 change_music(dominant_emotion, previous_emotion)
                 print("dominant emotion:", dominant_emotion)

@@ -5,6 +5,9 @@ import time
 def play_happy():
     os.system("open songs/happy.mp3")
 
+def play_disgust():
+    os.system("open songs/disgust.mp3")
+
 def play_sad():
     os.system("open songs/sad.mp3")
 
