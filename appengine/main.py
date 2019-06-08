@@ -3,18 +3,47 @@ from flask_sockets import Sockets
 import json
 import base64
 import os
-
+from datetime import datetime
+import sqlalchemy
 
 # THIS IS FOR DEBUGGING ONLY
 # NOTE:
 # Please comment this out when deploy to the app engine
-#TOKEN = "1234abcd"
+# CONNECTION_NAME = "bigdata"       # "YOUR_DB_INSTANCE_NAME"
+# DB_USER = "postgres"              # "YOUR_DB_USERNAME"   # usually postgres
+# DB_PASSWORD = "PPF7GkKrIMkAgwxl"  # "YOUR_DB_PASSWORD"
+# DB_NAME = "postgres"              # usually postgres
+# TOKEN = "1234abcd"                # can be anything unique
 
 # PRODUCTION ENV
 # NOTE:
 # Please uncomment this when deploy to the app engine
+CONNECTION_NAME = os.environ.get("CONNECTION_NAME")
+DB_USER = os.environ.get("DB_USER")
+DB_PASSWORD = os.environ.get("DB_PASSWORD")
+DB_NAME = os.environ.get("DB_NAME")
 TOKEN = os.environ.get("TOKEN")
 
+# set up database
+db = sqlalchemy.create_engine(
+    # Equivalent URL:
+    # postgres+psycopg2://<db_user>:<db_pass>@/<db_name>?unix_socket=/cloudsql/<cloud_sql_instance_name>
+    sqlalchemy.engine.url.URL(
+        drivername='postgres+psycopg2',
+        username=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_NAME,
+        # comment the line below if you want to use local sql proxy
+        host='/cloudsql/{}'.format(CONNECTION_NAME)
+        # uncomment these two lines below to enable local sql proxy connection
+        # you may need to change the port number based on your
+        # local sql proxy setup
+        # host="localhost",
+        # port=3306
+    ),
+)
+
+# setup flask
 app = Flask(__name__)
 sockets = Sockets(app)
 current_ws = None
@@ -48,15 +77,32 @@ def pubsub_push():
     print("received a good payload\n")
 
     if current_ws is not None:
+        # time
+        time_raw = message["attributes"]["published_at"]
+        current_time = datetime.strptime(time_raw, '%Y-%m-%dT%H:%M:%S.%fZ')
+        timestamp = int((current_time - datetime(1970, 1, 1)).total_seconds())
+
+        with db.connect() as conn:
+            sql_cmd = sqlalchemy.text("INSERT INTO temperature (time, value) values (:time, :temp)")
+            conn.execute(sql_cmd, {"time":str(timestamp), "temp":str(temperature)})
+
         # loop through the connected clients
-        clients = current_ws.handler.server.clients.values()
-        for client in clients:
-            client.ws.send(payload)
+        #clients = current_ws.handler.server.clients.values()
+        #for client in clients:
+        #    client.ws.send(payload)
+        
     return "OK\n", 200
 
 
 @app.route('/')
 def index():
+    sql_cmd = sqlalchemy.text("SELECT * FROM temperature WHERE time BETWEEN :start AND :end")
+    sql_lines = conn.execute(sql_cmd, {"start":start_time, "end":end_time})
+    fetched_lines = sql_lines.fetchall()
+    print(fetched_lines)
+    for kv in fetched_lines:
+        results.append({"time": kv[0], "value": kv[1]})
+
     return send_file('index.html')
 
 if __name__ == '__main__':
