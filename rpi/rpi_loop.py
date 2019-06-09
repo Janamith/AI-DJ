@@ -41,7 +41,7 @@ topic_name = "emotion"
 publisher = pubsub_v1.PublisherClient()
 topic_path = publisher.topic_path(project_id, topic_name)
 
-# create topic if not exists
+# create topic if it does not exists
 project_path = publisher.project_path(project_id)
 topics = publisher.list_topics(project_path)
 topic_names = [topic.name for topic in topics]
@@ -58,7 +58,7 @@ while True:
     frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     faces = face_cascade.detectMultiScale(frame_gray, scaleFactor=1.1)
 
-    # iterate through all detected facess
+    # iterate through all detected faces
     emotion_results = []
     for (x,y,w,h) in faces:
         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2, 5)
