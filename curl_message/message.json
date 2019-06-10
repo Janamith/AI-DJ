@@ -1,8 +1,11 @@
 {
 "message":
-	{
+    {
+	"data": {
 	    "emotions":["happy","sad"],
 	    "device_id":"jsetrpi",
 	    "published_at":1560128139.0895677
+	},
+	"publish_time":"2019-06-10T06:11:12.375Z"
     }
 }

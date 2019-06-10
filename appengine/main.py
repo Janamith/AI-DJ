@@ -4,6 +4,7 @@ import json
 import base64
 import os
 from datetime import datetime
+import time
 import sqlalchemy
 
 # THIS IS FOR DEBUGGING ONLY
@@ -18,11 +19,11 @@ TOKEN = "1234abcd"                # can be anything unique
 # PRODUCTION ENV
 # NOTE:
 # Please uncomment this when deploy to the app engine
-#   CONNECTION_NAME = os.environ.get("CONNECTION_NAME")
-#   DB_USER = os.environ.get("DB_USER")
-#   DB_PASSWORD = os.environ.get("DB_PASSWORD")
-#   DB_NAME = os.environ.get("DB_NAME")
-#   TOKEN = os.environ.get("TOKEN")
+# CONNECTION_NAME = os.environ.get("CONNECTION_NAME")
+# DB_USER = os.environ.get("DB_USER")
+# DB_PASSWORD = os.environ.get("DB_PASSWORD")
+# DB_NAME = os.environ.get("DB_NAME")
+# TOKEN = os.environ.get("TOKEN")
 
 # set up database
 db = sqlalchemy.create_engine(
@@ -34,12 +35,12 @@ db = sqlalchemy.create_engine(
         password=DB_PASSWORD,
         database=DB_NAME,
         # comment the line below if you want to use local sql proxy
-        host='/cloudsql/{}'.format(CONNECTION_NAME)
+        #host='/cloudsql/{}'.format(CONNECTION_NAME)
         # uncomment these two lines below to enable local sql proxy connection
         # you may need to change the port number based on your
         # local sql proxy setup
-        # host="localhost",
-        # port=3306
+        host="localhost",
+        port=5432
     ),
 )
 
@@ -55,7 +56,7 @@ def request_arg(request_args, request_json, arg_name):
         return request_args[arg_name]
 
 @sockets.route('/emotion')
-def image_socket(ws):
+def emotion_socket(ws):
     global current_ws
     token = request.args.get("token", "")
     if token != TOKEN:
@@ -66,7 +67,8 @@ def image_socket(ws):
         if message is None:  # message is "None" if the client has closed.
             continue
 
-
+last_time = 0
+        
 @app.route("/emotion-push", methods=["POST"])
 def pubsub_push():
     if request.args.get("token", "") != TOKEN:
@@ -75,25 +77,57 @@ def pubsub_push():
     message = envelope["message"]
     print("received message:", message)
 
-    # decode message: emotion, deviceid, and time
-    emotions = message["emotions"]
-    #payload = base64.b64decode(message["data"]).decode("ascii")
-    device_id = message["device_id"]
-    time = message["published_at"]
-    #current_time = datetime.strptime(time_raw, '%Y-%m-%dT%H:%M:%S.%fZ')
-    #timestamp = int((current_time - datetime(1970, 1, 1)).total_seconds())
+    ### Decode message: emotion, deviceid, and time
+    payload = base64.b64decode(message["data"]).decode("ascii")
+    print("payload:", payload)
+    payload = json.loads(payload)
+    emotions = payload["emotions"]
+    device_id = payload["device_id"]
+    time_raw = message["publish_time"]  # this a float of seconds since 1970 (microsecond precision)
+    current_time = datetime.strptime(time_raw, '%Y-%m-%dT%H:%M:%S.%fZ')
+    timestamp = int((current_time - datetime(1970, 1, 1)).total_seconds())
+    print("emotions:",emotions," device:",device_id," time:",timestamp)
 
-    #with db.connect() as conn:
-    #    for emotion in emotions:
-    #        print("inserting",emotion,"into the database (jk not yet)")
-    #        sql_cmd = sqlalchemy.text("INSERT INTO emotions (time, emotion, device_id) values (:time, :emotion, :device_id)")
-    #        conn.execute(sql_cmd, {"time":str(timestamp), "emotion":str(emotion), "device_id":str(device_id)})
+    ### Get data from database
+    with db.connect() as conn:
+        for emotion in emotions:
+            print("inserting",emotion,"into the database")
+            sql_cmd = sqlalchemy.text("INSERT INTO emotions (time, emotion, device_id) values (:time, :emotion, :device_id)")
+            conn.execute(sql_cmd, {"time":str(timestamp), "emotion":str(emotion), "device_id":str(device_id)})
 
-    #if current_ws is not None:
-    #    # loop through the connected clients
-    #    clients = current_ws.handler.server.clients.values()
-    #    for client in clients:
-    #        client.ws.send(payload)
+    ### Send an update to clients if enough time has elapsed and emotion has changed
+    global last_time
+    time_range = 5
+    cur_time = int(time.time())
+    elapsed_time = cur_time - last_time
+    print("elapsed time is:", elapsed_time)
+    if current_ws is not None and elapsed_time > time_range:
+    #if elapsed_time > time_range:
+        # get the current system time and use to construct time range for data selection
+        end_time = cur_time
+        start_time = 0  #end_time - time_range
+        last_time = cur_time
+        print("updating last time to", last_time)
+    
+        sql_data = []
+        emotions = []
+        with db.connect() as conn:
+            sql_cmd = sqlalchemy.text("SELECT * FROM emotions WHERE time BETWEEN :start AND :end")
+            sql_lines = conn.execute(sql_cmd, {"start":start_time, "end":end_time})
+            fetched_lines = sql_lines.fetchall()
+            print("fetched:",fetched_lines)
+            for kv in fetched_lines:
+                sql_data.append({"time": kv[0], "emotion": kv[1], "device_id": kv[2]})
+                emotions.append(kv[1])
+    
+        dominant_emotion = max(emotions, key=emotions.count)
+        #change_music(dominant_emotion, previous_emotion)
+        print("dominant emotion:", dominant_emotion)
+
+        # loop through the connected clients and send dominant emootioon
+        clients = current_ws.handler.server.clients.values()
+        for client in clients:
+            client.ws.send(dominant_emotion)
 
     
     return "OK\n", 200
@@ -101,23 +135,6 @@ def pubsub_push():
 
 @app.route('/')
 def index():
-    # get the current system time and use to construct time range for data selection
-    #start_time = request.args.get("start_time", "")
-    #end_time = request.args.get("end_time", "")
-
-    emotions = []
-    with db.connect() as conn:
-        sql_cmd = sqlalchemy.text("SELECT * FROM emotions WHERE time BETWEEN :start AND :end")
-        sql_lines = conn.execute(sql_cmd, {"start":start_time, "end":end_time})
-        fetched_lines = sql_lines.fetchall()
-        print(fetched_lines)
-        for kv in fetched_lines:
-            emotions.append({"time": kv[0], "emotion": kv[1], "device_id": kv[2]})
-
-    dominant_emotion = max(emotion, key=emotion.count)
-    #change_music(dominant_emotion, previous_emotion)
-    print("dominant emotion:", dominant_emotion)
-
     return send_file('index.html')
 
 if __name__ == '__main__':
