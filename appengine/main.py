@@ -76,16 +76,16 @@ def pubsub_push():
     print("received message:", message)
 
     # decode message: emotioon, deviceid, and time
-    emotions = message["data"]
+    emotions = message["emotions"]
     #payload = base64.b64decode(message["data"]).decode("ascii")
     device_id = message["device_id"]
-    time_raw = message["published_at"]
+    time = message["published_at"]
     #current_time = datetime.strptime(time_raw, '%Y-%m-%dT%H:%M:%S.%fZ')
     #timestamp = int((current_time - datetime(1970, 1, 1)).total_seconds())
 
-    with db.connect() as conn:
-        for emotion in emotions:
-            print("inserting",emotion,"into the database (jk not yet)")
+    #with db.connect() as conn:
+    #    for emotion in emotions:
+    #        print("inserting",emotion,"into the database (jk not yet)")
     #        sql_cmd = sqlalchemy.text("INSERT INTO emotions (time, emotion, device_id) values (:time, :emotion, :device_id)")
     #        conn.execute(sql_cmd, {"time":str(timestamp), "emotion":str(emotion), "device_id":str(device_id)})
 
