@@ -69,6 +69,7 @@ def emotion_socket(ws):
             continue
 
 last_time = 0
+previous_emotion = 'none'
         
 @app.route("/emotion-push", methods=["POST"])
 def pubsub_push():
@@ -84,9 +85,10 @@ def pubsub_push():
     payload = json.loads(payload)
     emotions = payload["emotions"]
     device_id = payload["device_id"]
-    time_raw = message["publish_time"]  # this a float of seconds since 1970 (microsecond precision)
-    current_time = datetime.strptime(time_raw, '%Y-%m-%dT%H:%M:%S:%fZ')
-    timestamp = int((current_time - datetime(1970, 1, 1)).total_seconds())
+    #time_raw = message["publish_time"]  # this a float of seconds since 1970 (microsecond precision)
+    #current_time = datetime.strptime(time_raw, '%Y-%m-%dT%H:%M:%S.%fZ')
+    #timestamp = int((current_time - datetime(1970, 1, 1)).total_seconds())
+    timestamp = int(payload["published_at"])
     print("emotions:",emotions," device:",device_id," time:",timestamp)
 
     ### Get data from database
@@ -98,15 +100,18 @@ def pubsub_push():
 
     ### Send an update to clients if enough time has elapsed and emotion has changed
     global last_time
+    global previous_emotion
     time_range = 5
     cur_time = int(time.time())
     elapsed_time = cur_time - last_time
     print("elapsed time is:", elapsed_time)
+
+    ### Send an update to clients if enough time has elapsed and emotion has changed
     if current_ws is not None and elapsed_time > time_range:
     #if elapsed_time > time_range:
         # get the current system time and use to construct time range for data selection
         end_time = cur_time
-        start_time = 0  #end_time - time_range
+        start_time = end_time - time_range
         last_time = cur_time
         print("updating last time to", last_time)
     
@@ -125,12 +130,13 @@ def pubsub_push():
         #change_music(dominant_emotion, previous_emotion)
         print("dominant emotion:", dominant_emotion)
 
-
-        # loop through the connected clients and send dominant emotion
-        #if previous_emotion != dominant_emotion
-        clients = current_ws.handler.server.clients.values()
-        for client in clients:
-            client.ws.send(dominant_emotion)
+        # loop through the connected clients and send dominant emotion,
+        #  but only send it if the mood has changed
+        if previous_emotion != dominant_emotion:
+            previous_emotion = dominant_emotion
+            clients = current_ws.handler.server.clients.values()
+            for client in clients:
+                client.ws.send(dominant_emotion)
 
     
     return "OK\n", 200
