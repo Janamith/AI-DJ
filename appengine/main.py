@@ -75,8 +75,8 @@ def pubsub_push():
     message = envelope["message"]
     print("received message:", message)
 
-    # decode message: emotioon, deviceid, and time
-    emotions = message["data"]
+    # decode message: emotion, deviceid, and time
+    emotions = message["emotions"]
     #payload = base64.b64decode(message["data"]).decode("ascii")
     device_id = message["device_id"]
     time_raw = message["published_at"]
