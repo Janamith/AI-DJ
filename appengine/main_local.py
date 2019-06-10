@@ -10,38 +10,37 @@ import sqlalchemy
 # THIS IS FOR DEBUGGING ONLY
 # NOTE:
 # Please comment this out when deploy to the app engine
-#    CONNECTION_NAME = "bigdata"       # "YOUR_DB_INSTANCE_NAME"
-#    DB_USER = "postgres"              # "YOUR_DB_USERNAME"   # usually postgres
-#    DB_PASSWORD = "HnusABOqiqMGfL00"  # "YOUR_DB_PASSWORD"
-#    DB_NAME = "postgres"              # usually postgres
-#    TOKEN = "1234abcd"                # can be anything unique
+CONNECTION_NAME = "bigdata"       # "YOUR_DB_INSTANCE_NAME"
+DB_USER = "postgres"              # "YOUR_DB_USERNAME"   # usually postgres
+DB_PASSWORD = "HnusABOqiqMGfL00"  # "YOUR_DB_PASSWORD"
+DB_NAME = "postgres"              # usually postgres
+TOKEN = "1234abcd"                # can be anything unique
 
 # PRODUCTION ENV
 # NOTE:
 # Please uncomment this when deploy to the app engine
-CONNECTION_NAME = os.environ.get("CONNECTION_NAME")
-DB_USER = os.environ.get("DB_USER")
-DB_PASSWORD = os.environ.get("DB_PASSWORD")
-DB_NAME = os.environ.get("DB_NAME")
-TOKEN = os.environ.get("TOKEN")
+# CONNECTION_NAME = os.environ.get("CONNECTION_NAME")
+# DB_USER = os.environ.get("DB_USER")
+# DB_PASSWORD = os.environ.get("DB_PASSWORD")
+# DB_NAME = os.environ.get("DB_NAME")
+# TOKEN = os.environ.get("TOKEN")
 
 # set up database
 db = sqlalchemy.create_engine(
     # Equivalent URL:
     # postgres+psycopg2://<db_user>:<db_pass>@/<db_name>?unix_socket=/cloudsql/<cloud_sql_instance_name>
-    # mysql+pymysql://[USER_NAME]:[PASSWORD]@127.0.0.1:5432/[DATABASE_NAME]
     sqlalchemy.engine.url.URL(
         drivername='postgres+psycopg2',
         username=DB_USER,
         password=DB_PASSWORD,
         database=DB_NAME,
         # comment the line below if you want to use local sql proxy
-        host='/cloudsql/{}'.format(CONNECTION_NAME)
+        #host='/cloudsql/{}'.format(CONNECTION_NAME)
         # uncomment these two lines below to enable local sql proxy connection
         # you may need to change the port number based on your
         # local sql proxy setup
-        #host="localhost",
-        #port=5432
+        host="localhost",
+        port=5432
     ),
 )
 

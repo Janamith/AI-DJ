@@ -8,6 +8,9 @@ env_variables:
   DB_PASSWORD: HnusABOqiqMGfL00
   DB_NAME: postgres
 
+beta_settings:
+  cloud_sql_instances: ai-dj-36:us-west2:bigdata
+
 
 # Use a special gunicorn worker class to support websockets.
 entrypoint: gunicorn -b :$PORT -k flask_sockets.worker main:app
