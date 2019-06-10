@@ -11,7 +11,8 @@
     <!-- play audio -->
     <script>
       window.onload = function() {
-      var context = new AudioContext();
+         var context = new AudioContext();
+         document.getElementById('song').play();
       }
     </script>
     <iframe src="silence.mp3" allow="autoplay" id="audiohack" style="display:none"></iframe>
@@ -20,15 +21,14 @@
       <source src="../songs/happy.mp3" type="audio/mp3">
     </audio>
 
-    <!-- change to sad -->
+    <!--   change to sad    -->
     <button onclick="changeSong()">I'm sad :(</button>
     <script>
       function changeSong() {
-      console.log('click!');
-      document.getElementById('song').setAttribute('src',"../songs/sad.mp3");
-      document.getElementById('song').play();
-      var textdom = document.getElementById('text');
-      $( textdom ).html(sad);
+         console.log('click!');
+         document.getElementById('song').setAttribute('src',"../songs/sad.mp3");
+         document.getElementById('song').play();
+         document.getElementById('text').textContent = 'sad';
       }
     </script>
 

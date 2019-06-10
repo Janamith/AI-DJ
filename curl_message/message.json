@@ -2,7 +2,7 @@
 "message":
     {
 	"data": {
-	    "emotions":["happy","sad"],
+	    "emotions":["sad"],
 	    "device_id":"jsetrpi",
 	    "published_at":1560128139.0895677
 	},

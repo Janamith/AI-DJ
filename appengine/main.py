@@ -124,7 +124,9 @@ def pubsub_push():
         #change_music(dominant_emotion, previous_emotion)
         print("dominant emotion:", dominant_emotion)
 
-        # loop through the connected clients and send dominant emootioon
+
+        # loop through the connected clients and send dominant emotion
+        #if previous_emotion != dominant_emotion
         clients = current_ws.handler.server.clients.values()
         for client in clients:
             client.ws.send(dominant_emotion)
@@ -133,6 +135,10 @@ def pubsub_push():
     return "OK\n", 200
 
 
+@app.route('/songs/<path:song>')
+def song_file(song):
+    return send_file('songs/' + song)
+    
 @app.route('/')
 def index():
     return send_file('index.html')
