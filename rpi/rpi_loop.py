@@ -53,34 +53,40 @@ if topic_path not in topic_names:
 #     Video loop     #
 ######################
 
+print("Starting video loop.")
 while True:
-    ret, frame = video_capture.read()
-    frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    faces = face_cascade.detectMultiScale(frame_gray, scaleFactor=1.1)
+   # below might work with different versions of opencv
+   #ret, frame = video_capture.read()
+   frame = video_capture.read()
+   frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+   faces = face_cascade.detectMultiScale(frame_gray, scaleFactor=1.1)
 
-    # iterate through all detected faces
-    emotion_results = []
-    for (x,y,w,h) in faces:
-        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2, 5)
-        face_crop = frame[y:y + h, x:x + w]
-        face_crop = cv2.resize(face_crop, (64, 64))
-        face_crop = cv2.cvtColor(face_crop, cv2.COLOR_BGR2GRAY)
-        face_crop = face_crop.astype('float32') / 255
-        face_crop = np.asarray(face_crop)
-        face_crop = face_crop.reshape(1,face_crop.shape[0], face_crop.shape[1],1)
-        emotion_result = target[np.argmax(model.predict(face_crop))]
-        emotion_results.append(emotion_result)
+   # iterate through all detected faces
+   emotion_results = []
+   for (x,y,w,h) in faces:
+      cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2, 5)
+      face_crop = frame[y:y + h, x:x + w]
+      face_crop = cv2.resize(face_crop, (64, 64))
+      face_crop = cv2.cvtColor(face_crop, cv2.COLOR_BGR2GRAY)
+      face_crop = face_crop.astype('float32') / 255
+      face_crop = np.asarray(face_crop)
+      face_crop = face_crop.reshape(1,face_crop.shape[0], face_crop.shape[1],1)
+      emotion_result = target[np.argmax(model.predict(face_crop))]
+      emotion_results.append(emotion_result)
 
-    # encode the result as a payload
-    payload = {"emotions": emotion_results}
-    payload = json.dumps(payload)
-    payload = payload.encode("utf-8")
+   # encode the result as a payload
+   curtime = time.time()
+   payload_contents = {"device_id":"jeffsrpi", "published_at":curtime, "emotions": emotion_results}
+   payload = json.dumps(payload_contents)
+   payload = payload.encode("utf-8")
         
-    # publish it to gcloud
-    print(emotion_result)
-    future = publisher.publish(topic_path, data=payload)
-
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+   # publish it to gcloud if anything detected
+   if emotion_results:
+      #print(emotion_results)
+      print(payload_contents)
+      future = publisher.publish(topic_path, data=payload)
+   
+   if cv2.waitKey(1) & 0xFF == ord('q'):
+      break
 video_capture.release()
 cv2.destroyALlWindows()
