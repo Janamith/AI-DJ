@@ -84,7 +84,7 @@ while True:
    if emotion_results:
       #print(emotion_results)
       print(payload_contents)
-      #future = publisher.publish(topic_path, data=payload)
+      future = publisher.publish(topic_path, data=payload)
    
    if cv2.waitKey(1) & 0xFF == ord('q'):
       break
