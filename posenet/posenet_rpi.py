@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# -*- coding: UTF-8 -*-
+# -*- coding: utf-8 -*-
 import json
 import struct
 import tensorflow as tf
@@ -15,7 +15,12 @@ from decode_single_pose import decode_single_pose
 from draw import drawKeypoints, drawSkeleton, measure_keypoint_var
 from picamera.array import PiRGBArray
 from picamera import PiCamera
-from threading import Thread 
+from threading import Thread
+
+# from google cloud
+from google.cloud import pubsub_v1
+import json
+import base64
 
 color_table = [(0,255,0), (255,0,0), (0,0,255), (255, 255, 0), (0, 255, 255), (255, 0, 255)]
 NUM_FRAMES_TO_AVERAGE = 5
@@ -169,6 +174,25 @@ class TestPoseNet:
         height_factor = cap_height/self.height
 
         with tf.Session() as sess:
+            ######################
+            #    Setup GCloud    #
+            ######################
+            
+            project_id = "ai-dj-36"
+            topic_name = "pose"
+            
+            publisher = pubsub_v1.PublisherClient()
+            topic_path = publisher.topic_path(project_id, topic_name)
+            
+            # create topic if it does not exists
+            project_path = publisher.project_path(project_id)
+            topics = publisher.list_topics(project_path)
+            topic_names = [topic.name for topic in topics]
+            if topic_path not in topic_names:
+               topic = publisher.create_topic(topic_path)
+               print('Topic created: {}'.format(topic))
+
+            # continue with model
             init = tf.global_variables_initializer()
             sess.run(init)
 
@@ -199,8 +223,17 @@ class TestPoseNet:
                         ave_counter += 1
                     else:
                         print(total_point_var / NUM_FRAMES_TO_AVERAGE)
+                        # send score to appengine
+                        curtime = time.time()
+                        payload_contents = {"device_id":"jeffsrpi", "published_at":curtime, "pose": total_point_var / NUM_FRAMES_TO_AVERAGE}
+                        payload = json.dumps(payload_contents)
+                        payload = payload.encode("utf-8")
+                        print(payload_contents)
+                        future = publisher.publish(topic_path, data=payload)
+
                         ave_counter = 0 
                         total_point_var = 0
+                        
                     init_pose = curr_pose
                     
                     for idx in range(len(curr_pose)):

@@ -8,7 +8,6 @@ from keras.models import load_model
 from picamera.array import PiRGBArray
 from picamera import PiCamera
 
-
 # from google cloud
 from google.cloud import pubsub_v1
 import json

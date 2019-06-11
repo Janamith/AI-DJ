@@ -1,1 +1,2 @@
-curl -X POST -d @message.json 127.0.0.1:8080/emotion-push?token=1234abcd -H "Content-Type: application/json"
+curl -X POST -d @message64.json 127.0.0.1:8080/emotion-push?token=1234abcd -H "Content-Type: application/json"
+curl -X POST -d @message64_slow.json 127.0.0.1:8080/pose-push?token=1234abcd -H "Content-Type: application/json"
