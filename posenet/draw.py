@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: UTF-8 -*-
 import cv2
+import math
 
 KeyPointNames = {
   'nose', 'leftEye', 'rightEye', 'leftEar', 'rightEar', 'leftShoulder',
@@ -37,6 +38,20 @@ poseChain = [
 ]
 
 confidence_threshold = 0.1
+
+def measure_keypoint_var(init_pose, curr_pose):
+  total_var = 0.0
+  for i in range(len(curr_pose['keypoints'])):
+    if i <= 6:
+     continue
+    keypoint_curr = curr_pose['keypoints'][i]
+    keypoint_init = init_pose['keypoints'][i]
+    if (keypoint_curr['score'] >= confidence_threshold and keypoint_init['score'] >= confidence_threshold):
+      point_curr = (int(keypoint_curr['position']['x']), int(keypoint_curr['position']['y']))
+      point_init = (int(keypoint_init['position']['x']), int(keypoint_init['position']['y']))
+      total_var += math.sqrt(((point_curr[0] - point_init[0])**2)+((point_curr[1] - point_init[1])**2))
+  return total_var
+
 def drawKeypoints(body, img, color):
     for keypoint in body['keypoints']:
         if keypoint['score'] >= confidence_threshold:
@@ -45,7 +60,12 @@ def drawKeypoints(body, img, color):
             color = color
             cv2.circle(img, center, radius, color, -1, 8)
     return None
-
+'''
+def meausre_keypoint_var(body):
+  for keypoint in body['keypoints']:
+    if keypoint['score'] >= confidence_threshold:
+      center = (int(keypoint['position']['x']), int(keypoint['position']['y']))
+'''
 HeaderPart = {'nose', 'leftEye', 'leftEar', 'rightEye', 'rightEar'}
 def drawSkeleton(body, img):
     valid_name = set()
