@@ -72,7 +72,7 @@ last_speed = 'med'
 speed = 'med'
         
 @app.route("/pose-push", methods=["POST"])
-def pubsub_push():
+def pubsub_pose_push():
     if request.args.get("token", "") != TOKEN:
         return "Invalid request", 400
     envelope = json.loads(request.data.decode("utf-8"))
@@ -88,19 +88,19 @@ def pubsub_push():
     # set global speed based on threshold values on score
     global speed
     if pose_score > 0.7:
-        speed = "high"
+        speed = "fast"
     elif pose_score > 0.3:
         speed = "med"
     else:
-        speed = "low"
+        speed = "slow"
     print("set speed to", speed)
-        
+    return "OK\n", 200        
         
 last_time = 0
 previous_emotion = 'happy'
         
 @app.route("/emotion-push", methods=["POST"])
-def pubsub_push():
+def pubsub_emotion_push():
     if request.args.get("token", "") != TOKEN:
         return "Invalid request", 400
     envelope = json.loads(request.data.decode("utf-8"))
@@ -136,8 +136,6 @@ def pubsub_push():
 
     ### Send an update to clients if enough time has elapsed and emotion has changed
     if current_ws is not None and elapsed_time > time_range:
-    #if elapsed_time > time_range:
-        
         # get the current system time and use to construct time range for data selection
         end_time = cur_time
         start_time = end_time - time_range
@@ -156,7 +154,6 @@ def pubsub_push():
                 emotions.append(kv[1])
     
         dominant_emotion = max(emotions, key=emotions.count)
-        #change_music(dominant_emotion, previous_emotion)
         print("dominant emotion:", dominant_emotion)
 
         # loop through the connected clients and send dominant emotion and speed,
