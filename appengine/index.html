@@ -51,11 +51,11 @@
 
       websocket.onmessage = function(e) {
         console.log('Message received');
-        dominant_emotion = e.data;
-        console.log(dominant_emotion);
-        document.getElementById('text').textContent = dominant_emotion;
+        mood = e.data;
+        console.log(mood);
+        document.getElementById('text').textContent = mood;
         document.getElementById('song')
-           .setAttribute('src',"songs/".concat(dominant_emotion,".mp3"));
+           .setAttribute('src',"songs/".concat(mood,".mp3"));
       };
 
       websocket.onerror = function(e) {

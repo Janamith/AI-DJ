@@ -5,6 +5,8 @@ import cv2
 import time
 import numpy as np 
 from keras.models import load_model
+from picamera.array import PiRGBArray
+from picamera import PiCamera
 
 # from google cloud
 from google.cloud import pubsub_v1
@@ -19,8 +21,15 @@ import base64
 #video_capture = cv2.VideoCapture(0)
 #target_emotions = ['neutral', 'happiness', 'sad']
 
+camera = PiCamera()
+camera.resolution = (640, 480)
+camera.framerate = 32
+camera.brightness = 50
+rawCapture = PiRGBArray(camera, size=(640,480))
+stream = camera.capture_continuous(rawCapture, format='bgr', use_video_port=True)
+
 # use the rpi camera
-video_capture = VideoStream(usePiCamera=True).start()
+#video_capture = VideoStream(usePiCamera=True).start()
 
 # load the model
 model = load_model('./models/_mini_XCEPTION.102-0.66.hdf5')
@@ -29,7 +38,6 @@ target = ['angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral']
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
 time.sleep(2.0)
-
 
 ######################
 #    Setup GCloud    #
@@ -54,10 +62,12 @@ if topic_path not in topic_names:
 ######################
 
 print("Starting video loop.")
-while True:
+for f in stream:
    # below might work with different versions of opencv
    #ret, frame = video_capture.read()
-   frame = video_capture.read()
+   frame = f.array
+   rawCapture.truncate(0)
+   #frame = video_capture.read()
    frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
    faces = face_cascade.detectMultiScale(frame_gray, scaleFactor=1.1)
 
@@ -86,6 +96,7 @@ while True:
       print(payload_contents)
       future = publisher.publish(topic_path, data=payload)
    
+   cv2.imshow('frame', frame)
    if cv2.waitKey(1) & 0xFF == ord('q'):
       break
 video_capture.release()
