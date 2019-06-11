@@ -38,6 +38,7 @@ poseChain = [
 ]
 
 confidence_threshold = 0.1
+max_keypoint_displacement = 320
 
 def measure_keypoint_var(init_pose, curr_pose):
   total_var = 0.0
@@ -50,7 +51,7 @@ def measure_keypoint_var(init_pose, curr_pose):
       point_curr = (int(keypoint_curr['position']['x']), int(keypoint_curr['position']['y']))
       point_init = (int(keypoint_init['position']['x']), int(keypoint_init['position']['y']))
       total_var += math.sqrt(((point_curr[0] - point_init[0])**2)+((point_curr[1] - point_init[1])**2))
-  return total_var
+  return total_var / max_keypoint_displacement
 
 def drawKeypoints(body, img, color):
     for keypoint in body['keypoints']:
@@ -60,12 +61,8 @@ def drawKeypoints(body, img, color):
             color = color
             cv2.circle(img, center, radius, color, -1, 8)
     return None
-'''
-def meausre_keypoint_var(body):
-  for keypoint in body['keypoints']:
-    if keypoint['score'] >= confidence_threshold:
-      center = (int(keypoint['position']['x']), int(keypoint['position']['y']))
-'''
+
+
 HeaderPart = {'nose', 'leftEye', 'leftEar', 'rightEye', 'rightEar'}
 def drawSkeleton(body, img):
     valid_name = set()

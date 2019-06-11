@@ -18,6 +18,8 @@ from picamera import PiCamera
 from threading import Thread 
 
 color_table = [(0,255,0), (255,0,0), (0,0,255), (255, 255, 0), (0, 255, 255), (255, 0, 255)]
+NUM_FRAMES_TO_AVERAGE = 5
+
 class TestPoseNet:
     def __init__(self):
         with open('config.yaml') as f:
@@ -166,7 +168,6 @@ class TestPoseNet:
         width_factor =  cap_width/self.width
         height_factor = cap_height/self.height
 
-         
         with tf.Session() as sess:
             init = tf.global_variables_initializer()
             sess.run(init)
@@ -193,11 +194,11 @@ class TestPoseNet:
                     curr_pose = self.process_frame(sess, cap, frame, width_factor, height_factor)
                     if len(curr_pose) == 0:
                         continue
-                    if ave_counter < 10:
+                    if ave_counter < NUM_FRAMES_TO_AVERAGE:
                         total_point_var += measure_keypoint_var(init_pose[0], curr_pose[0])
                         ave_counter += 1
                     else:
-                        print(total_point_var)
+                        print(total_point_var / NUM_FRAMES_TO_AVERAGE)
                         ave_counter = 0 
                         total_point_var = 0
                     init_pose = curr_pose
