@@ -39,18 +39,17 @@ poseChain = [
 
 confidence_threshold = 0.1
 max_keypoint_displacement = 320
-shoulder_calib_length = 50
+shoulder_calib_length = 5
 
 def measure_keypoint_var(init_pose, curr_pose):
   total_var = 0.0
   left_shoulder = curr_pose['keypoints'][4]
   right_shoulder = curr_pose['keypoints'][5]
   global shoulder_calib_length
-  print (shoulder_calib_length)
   if left_shoulder['score'] >= confidence_threshold and right_shoulder['score'] >= confidence_threshold:
     left_shoulder_point = (int(left_shoulder['position']['x']), int(left_shoulder['position']['y']))
     right_shoulder_point = (int(right_shoulder['position']['x']), int(right_shoulder['position']['y']))
-    shoulder_calib_length = math.sqrt(((right_shoulder_point[0] - left_shoulder_point[0])**2)+((right_shoulder_point[1] - left_shoulder_point[1])**2))
+    shoulder_calib_length = (math.sqrt(((right_shoulder_point[0] - left_shoulder_point[0])**2)+((right_shoulder_point[1] - left_shoulder_point[1])**2))) / 10
   for i in range(len(curr_pose['keypoints'])):
     if i <= 6:
       continue
