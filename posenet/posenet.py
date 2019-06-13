@@ -138,7 +138,7 @@ class TestPoseNet:
         self.displacementBwd = self.convToOutput(x, 'displacement_bwd_2')
         self.heatmaps = tf.sigmoid(self.heatmaps, 'heatmap')
 
-        cap = cv2.VideoCapture(0) #读取摄像头
+        cap = cv2.VideoCapture(0) 
         cap_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
         cap_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
         width_factor =  cap_width/self.width
