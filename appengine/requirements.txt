@@ -1,6 +1,6 @@
 Flask==1.0.2
 sqlalchemy==1.2.18
-requests==2.21.0
+requests==2.31.0
 Flask-Sockets==0.2.1
 gunicorn
 psycopg2==2.7.7
